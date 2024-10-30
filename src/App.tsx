@@ -21,6 +21,7 @@ function App() {
     variables: {
       labels: filters.labels,
       after: null,
+      projectPath: import.meta.env.VITE_GITLAB_PROJECT_PATH,
     },
   });
 
@@ -62,7 +63,7 @@ function App() {
         {error && (
           <Alert
             message="Error"
-            description="Failed to load merge requests. Please check your token and try again."
+            description={`Failed to load merge requests: ${error.message}`}
             type="error"
             showIcon
             className="mb-4"

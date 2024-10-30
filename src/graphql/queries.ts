@@ -1,7 +1,7 @@
 import { gql } from '@apollo/client';
 
 export const GET_MERGE_REQUESTS = gql`
-  query GetMergeRequests($labels: [String!], $after: String) {
+  query GetMergeRequests($labels: [String!], $after: String, $projectPath: ID!) {
     project(fullPath: $projectPath) {
       mergeRequests(
         first: 20
