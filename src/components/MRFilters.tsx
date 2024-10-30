@@ -1,22 +1,30 @@
 import React from 'react';
-import { Card, DatePicker, Select, Space } from 'antd';
-import { FilterOutlined } from '@ant-design/icons';
-import type { FilterParams } from '../types/gitlab';
+import { Card, DatePicker, Space, Button, Checkbox, Spin } from 'antd';
+import { FilterOutlined, SearchOutlined } from '@ant-design/icons';
+import type { FilterParams, ProjectLabel } from '../types/gitlab';
 
 const { RangePicker } = DatePicker;
 
 interface MRFiltersProps {
-  labels: string[];
+  selectedLabels: string[];
   onFilterChange: (filters: FilterParams) => void;
-  availableLabels: string[];
+  onFetchData: () => void;
+  projectLabels: ProjectLabel[];
+  isLoadingLabels: boolean;
 }
 
 export const MRFilters: React.FC<MRFiltersProps> = ({
-  labels,
+  selectedLabels,
   onFilterChange,
-  availableLabels,
+  onFetchData,
+  projectLabels,
+  isLoadingLabels,
 }) => {
-  const handleLabelChange = (newLabels: string[]) => {
+  const handleLabelChange = (label: string, checked: boolean) => {
+    const newLabels = checked
+      ? [...selectedLabels, label]
+      : selectedLabels.filter(l => l !== label);
+
     onFilterChange({
       labels: newLabels,
       startDate: null,
@@ -26,7 +34,7 @@ export const MRFilters: React.FC<MRFiltersProps> = ({
 
   const handleDateChange = (dates: any) => {
     onFilterChange({
-      labels,
+      labels: selectedLabels,
       startDate: dates?.[0]?.toISOString() || null,
       endDate: dates?.[1]?.toISOString() || null,
     });
@@ -34,17 +42,49 @@ export const MRFilters: React.FC<MRFiltersProps> = ({
 
   return (
     <Card className="mb-4">
-      <Space direction="horizontal" size="middle">
-        <Select
-          mode="multiple"
-          style={{ width: '300px' }}
-          placeholder="Filter by labels"
-          value={labels}
-          onChange={handleLabelChange}
-          options={availableLabels.map(label => ({ label, value: label }))}
-          prefix={<FilterOutlined />}
-        />
-        <RangePicker onChange={handleDateChange} />
+      <Space direction="vertical" size="middle" className="w-full">
+        <div>
+          <h4 className="mb-2 font-medium">Labels</h4>
+          {isLoadingLabels ? (
+            <Spin />
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {projectLabels.map(label => (
+                <div
+                  key={label.id}
+                  className="inline-flex items-center gap-1 border rounded-md px-2 py-1"
+                  style={{ borderColor: `${label.color}40` }}
+                >
+                  <Checkbox
+                    checked={selectedLabels.includes(label.title)}
+                    onChange={e => handleLabelChange(label.title, e.target.checked)}
+                  />
+                  <span
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: label.color }}
+                  />
+                  <span>{label.title}</span>
+                  {label.description && (
+                    <span className="text-gray-400 text-sm" title={label.description}>
+                      ℹ️
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        
+        <Space wrap>
+          <RangePicker onChange={handleDateChange} />
+          <Button 
+            type="primary" 
+            icon={<SearchOutlined />}
+            onClick={onFetchData}
+          >
+            Fetch Data
+          </Button>
+        </Space>
       </Space>
     </Card>
   );
