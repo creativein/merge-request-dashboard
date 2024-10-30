@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Layout, Typography, Spin, Alert } from 'antd';
 import { useLazyQuery, useQuery } from '@apollo/client';
 import { GET_MERGE_REQUESTS, GET_PROJECT_LABELS } from './graphql/queries';
 import { MRFilters } from './components/MRFilters';
 import { MRCard } from './components/MRCard';
+import { MRTable } from './components/MRTable';
+import { ViewToggle } from './components/ViewToggle';
 import type { FilterParams, MergeRequest, ProjectLabel } from './types/gitlab';
 import { GitMergeIcon } from 'lucide-react';
 
@@ -11,6 +13,7 @@ const { Header, Content } = Layout;
 const { Title } = Typography;
 
 function App() {
+  const [view, setView] = useState<'card' | 'table'>('table');
   const [filters, setFilters] = useState<FilterParams>({
     labels: [],
     startDate: null,
@@ -41,6 +44,7 @@ function App() {
   };
 
   const projectLabels: ProjectLabel[] = labelsData?.project.labels.nodes || [];
+  const mergeRequests: MergeRequest[] = data?.project.mergeRequests.nodes || [];
 
   return (
     <Layout className="min-h-screen">
@@ -81,11 +85,18 @@ function App() {
           <div className="flex justify-center p-8">
             <Spin size="large" />
           </div>
-        ) : (
-          data?.project.mergeRequests.nodes.map((mr: MergeRequest) => (
-            <MRCard key={mr.id} mergeRequest={mr} />
-          ))
-        )}
+        ) : data ? (
+          <>
+            <ViewToggle view={view} onChange={setView} />
+            {view === 'card' ? (
+              mergeRequests.map((mr: MergeRequest) => (
+                <MRCard key={mr.id} mergeRequest={mr} />
+              ))
+            ) : (
+              <MRTable mergeRequests={mergeRequests} />
+            )}
+          </>
+        ) : null}
       </Content>
     </Layout>
   );
