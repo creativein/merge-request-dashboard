@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Layout, Typography, Spin, Alert } from 'antd';
-import { useLazyQuery, useQuery } from '@apollo/client';
+import { useLazyQuery, useQuery, useApolloClient } from '@apollo/client';
 import { GET_MERGE_REQUESTS, GET_PROJECT_LABELS } from './graphql/queries';
 import { MRFilters } from './components/MRFilters';
 import { MRCard } from './components/MRCard';
@@ -26,25 +26,46 @@ function App() {
     variables: { projectPath },
   });
 
-  const [getMergeRequests, { loading, error, data }] = useLazyQuery(GET_MERGE_REQUESTS);
+  const [mergeRequests, setMergeRequests] = useState<MergeRequest[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const client = useApolloClient();
 
   const handleFilterChange = (newFilters: FilterParams) => {
     setFilters(newFilters);
   };
 
-  const handleFetchData = () => {
-    getMergeRequests({
-      variables: {
-        labels: filters.labels,
-        startDate: filters.startDate,
-        endDate: filters.endDate,
-        projectPath,
-      },
-    });
+  const handleFetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const promises = filters.labels.map((label) =>
+        client.query({
+          query: GET_MERGE_REQUESTS,
+          variables: {
+            labels: [label],
+            startDate: filters.startDate,
+            endDate: filters.endDate,
+            projectPath,
+          },
+        })
+      );
+      const results = await Promise.all(promises);
+      const allMergeRequests = results.flatMap(
+        (result) => result.data.project.mergeRequests.nodes
+      );
+      const uniqueMergeRequests = Array.from(
+        new Map(allMergeRequests.map((mr) => [mr.id, mr])).values()
+      );
+      setMergeRequests(uniqueMergeRequests);
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const projectLabels: ProjectLabel[] = labelsData?.project.labels.nodes || [];
-  const mergeRequests: MergeRequest[] = data?.project.mergeRequests.nodes || [];
 
   return (
     <Layout className="min-h-screen">
@@ -85,7 +106,7 @@ function App() {
           <div className="flex justify-center p-8">
             <Spin size="large" />
           </div>
-        ) : data ? (
+        ) : mergeRequests.length > 0 ? (
           <>
             <ViewToggle view={view} onChange={setView} />
             {view === 'card' ? (

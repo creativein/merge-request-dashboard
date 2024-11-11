@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Table, Tag, Avatar, Tooltip, Space } from 'antd';
 import { UserOutlined, CheckCircleOutlined, SyncOutlined } from '@ant-design/icons';
 import type { MergeRequest } from '../types/gitlab';
@@ -8,6 +8,20 @@ interface MRTableProps {
 }
 
 export const MRTable: React.FC<MRTableProps> = ({ mergeRequests }) => {
+  const [sortedData, setSortedData] = useState(mergeRequests);
+  const [sortOrder, setSortOrder] = useState<'ascend' | 'descend' | null>(null);
+
+  const handleSort = () => {
+    const order = sortOrder === 'ascend' ? 'descend' : 'ascend';
+    const sorted = [...sortedData].sort((a, b) =>
+      order === 'ascend'
+        ? a.state.localeCompare(b.state)
+        : b.state.localeCompare(a.state)
+    );
+    setSortedData(sorted);
+    setSortOrder(order);
+  };
+
   const getStateIcon = (state: string) => {
     switch (state) {
       case 'merged':
@@ -45,7 +59,11 @@ export const MRTable: React.FC<MRTableProps> = ({ mergeRequests }) => {
       ),
     },
     {
-      title: 'State',
+      title: (
+        <span onClick={handleSort} style={{ cursor: 'pointer' }}>
+          State {sortOrder === 'ascend' ? '↑' : sortOrder === 'descend' ? '↓' : ''}
+        </span>
+      ),
       dataIndex: 'state',
       key: 'state',
       render: (state: string) => (
@@ -113,7 +131,7 @@ export const MRTable: React.FC<MRTableProps> = ({ mergeRequests }) => {
   return (
     <Table
       columns={columns}
-      dataSource={mergeRequests}
+      dataSource={sortedData}
       rowKey="id"
       pagination={{ pageSize: 10 }}
       scroll={{ x: true }}
