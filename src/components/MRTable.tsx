@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { Table, Tag, Tooltip, Space } from 'antd';
+import { Table, Tag, Tooltip, Space, Collapse } from 'antd';
 import { CheckCircleOutlined, SyncOutlined } from '@ant-design/icons';
+import ReactMarkdown from 'react-markdown';
 import type { MergeRequest } from '../types/gitlab';
+
+const { Panel } = Collapse;
 
 interface MRTableProps {
   mergeRequests: MergeRequest[];
@@ -125,14 +128,62 @@ export const MRTable: React.FC<MRTableProps> = ({ mergeRequests }) => {
       ),
     },
     {
+      title: 'Description',
+      dataIndex: 'description',
+      key: 'description',
+      render: (_: any, record: MergeRequest) => (
+        <Collapse>
+          <Panel header="Show Description" key="1">
+            {record.description}
+            {/* <ReactMarkdown>{record.description}</ReactMarkdown> */}
+          </Panel>
+        </Collapse>
+      ),
+    },
+    {
       title: 'Resolvable Comments',
       dataIndex: 'resolvableComments',
       key: 'resolvableComments',
       render: (_: any, record: MergeRequest) => {
-        const count = record.discussions.nodes.reduce((acc, discussion) => {
-          return acc + discussion.notes.nodes.filter(note => note.resolvable).length;
-        }, 0);
-        return count > 0 ? <Tag color="blue">{count}</Tag> : '0';
+        const resolvableDiscussions = record.discussions.nodes.filter(discussion =>
+          discussion.notes.nodes.some(note => note.resolvable)
+        );
+        return (
+          <Collapse>
+            <Panel header={`Show Resolvable Comments (${resolvableDiscussions.length})`} key="1">
+              {resolvableDiscussions.length > 0 ? (
+                resolvableDiscussions.map(discussion => (
+                  <div key={discussion.id} style={{ marginBottom: '16px' }}>
+                    {discussion.notes.nodes.map(comment => (
+                      <div key={comment.id} style={{ marginBottom: '8px' }}>
+                        <div style={{
+                          background: '#f1f1f1',
+                          padding: '8px',
+                          borderRadius: '8px',
+                          maxWidth: '80%',
+                          wordBreak: 'break-word',
+                          position: 'relative'
+                        }}>
+                          {comment.body}
+                          <div style={{ color: '#888', fontSize: '12px', marginTop: '4px' }}>
+                            - {comment.author.name}
+                          </div>
+                          {comment.resolved && (
+                            <CheckCircleOutlined
+                              style={{ color: 'green', position: 'absolute', top: '8px', right: '8px' }}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))
+              ) : (
+                'No resolvable comments'
+              )}
+            </Panel>
+          </Collapse>
+        );
       },
     },
   ];
