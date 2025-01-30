@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Table, Tag, Avatar, Tooltip, Space } from 'antd';
-import { UserOutlined, CheckCircleOutlined, SyncOutlined } from '@ant-design/icons';
+import { Table, Tag, Tooltip, Space } from 'antd';
+import { CheckCircleOutlined, SyncOutlined } from '@ant-design/icons';
 import type { MergeRequest } from '../types/gitlab';
 
 interface MRTableProps {
@@ -78,13 +78,16 @@ export const MRTable: React.FC<MRTableProps> = ({ mergeRequests }) => {
       dataIndex: 'assignees',
       key: 'assignees',
       render: (_: any, record: MergeRequest) => (
-        <Avatar.Group maxCount={3}>
-          {record.assignees.nodes.map(assignee => (
+        <Space wrap>
+          {record.assignees.nodes.map((assignee, index) => (
             <Tooltip key={assignee.id} title={assignee.name}>
-              <Avatar src={assignee.avatarUrl} icon={<UserOutlined />} />
+              <article>
+                {assignee.name}
+                {index < record.assignees.nodes.length - 1 && <span>, </span>}
+              </article>
             </Tooltip>
           ))}
-        </Avatar.Group>
+        </Space>
       ),
     },
     {
@@ -92,13 +95,16 @@ export const MRTable: React.FC<MRTableProps> = ({ mergeRequests }) => {
       dataIndex: 'reviewers',
       key: 'reviewers',
       render: (_: any, record: MergeRequest) => (
-        <Avatar.Group maxCount={3}>
-          {record.reviewers.nodes.map(reviewer => (
+        <Space wrap>
+          {record.reviewers.nodes.map((reviewer, index) => (
             <Tooltip key={reviewer.id} title={reviewer.name}>
-              <Avatar src={reviewer.avatarUrl} icon={<UserOutlined />} />
+              <article>
+                {reviewer.name}
+                {index < record.reviewers.nodes.length - 1 && <span>, </span>}
+              </article>
             </Tooltip>
           ))}
-        </Avatar.Group>
+        </Space>
       ),
     },
     {
@@ -106,13 +112,16 @@ export const MRTable: React.FC<MRTableProps> = ({ mergeRequests }) => {
       dataIndex: 'approvedBy',
       key: 'approvedBy',
       render: (_: any, record: MergeRequest) => (
-        <Avatar.Group maxCount={3}>
-          {record.approvedBy.nodes.map(approver => (
+        <Space wrap>
+          {record.approvedBy.nodes.map((approver, index) => (
             <Tooltip key={approver.id} title={approver.name}>
-              <Avatar src={approver.avatarUrl} icon={<UserOutlined />} />
+              <article>
+                {approver.name}
+                {index < record.approvedBy.nodes.length - 1 && <span>, </span>}
+              </article>
             </Tooltip>
           ))}
-        </Avatar.Group>
+        </Space>
       ),
     },
     {
