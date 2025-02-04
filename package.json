@@ -16,7 +16,8 @@
     "react-dom": "^18.3.1",
     "@apollo/client": "^3.9.5",
     "graphql": "^16.8.1",
-    "dayjs": "^1.11.10"
+    "dayjs": "^1.11.10",
+    "moment": "^2.29.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
