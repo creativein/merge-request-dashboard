@@ -108,7 +108,7 @@ function App() {
           </div>
         ) : mergeRequests.length > 0 ? (
           <>
-            <ViewToggle view={view} onChange={setView} />
+            {/* <ViewToggle view={view} onChange={setView} /> */}
             {view === 'card' ? (
               mergeRequests.map((mr: MergeRequest) => (
                 <MRCard key={mr.id} mergeRequest={mr} />

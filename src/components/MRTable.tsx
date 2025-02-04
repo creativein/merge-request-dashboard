@@ -1,16 +1,18 @@
 import React, { useState } from "react";
-import { Table, Tag, Tooltip, Space, Collapse } from "antd";
-import { CheckCircleOutlined, SyncOutlined } from "@ant-design/icons";
+import { Table, Tag, Tooltip, Space, Collapse, Input } from "antd";
+import { CheckOutlined, BranchesOutlined } from "@ant-design/icons";
 import moment from "moment";
 import type { MergeRequest } from "../types/gitlab";
 
 const { Panel } = Collapse;
+const { Search } = Input;
 
 interface MRTableProps {
   mergeRequests: MergeRequest[];
 }
 
 export const MRTable: React.FC<MRTableProps> = ({ mergeRequests }) => {
+  const [searchText, setSearchText] = useState("");
   const [sortedData, setSortedData] = useState(() => {
     const openMRs = mergeRequests
       .filter((mr) => mr.state === "opened")
@@ -45,12 +47,20 @@ export const MRTable: React.FC<MRTableProps> = ({ mergeRequests }) => {
     setSortOrder(order);
   };
 
+  const handleSearch = (value: string) => {
+    setSearchText(value);
+    const filteredData = mergeRequests.filter((mr) =>
+      mr.title.toLowerCase().includes(value.toLowerCase())
+    );
+    setSortedData(filteredData);
+  };
+
   const getStateIcon = (state: string) => {
     switch (state) {
       case "merged":
-        return <CheckCircleOutlined className="text-green-500" />;
+        return <CheckOutlined className="text-green-500" />;
       case "opened":
-        return <SyncOutlined className="text-blue-500" spin />;
+        return <BranchesOutlined className="text-blue-500"  />;
       default:
         return null;
     }
@@ -64,26 +74,24 @@ export const MRTable: React.FC<MRTableProps> = ({ mergeRequests }) => {
       width: "50%",
       render: (text: string, record: MergeRequest) => (
         <Space direction="vertical">
+          <a href={record.webUrl} target="_blank" rel="noopener noreferrer">
+            <span style={{ color: "#1890ff" }}>
+              [#{record.webUrl.split("/").pop()}]
+            </span>{" "}
+            <span>{text}</span>
+          </a>
           <Space wrap>
-            <a href={record.webUrl} target="_blank" rel="noopener noreferrer">
-              {text}
-            </a>{" "}
-            <a href={record.webUrl} target="_blank" rel="noopener noreferrer">
-              <span style={{ color: "#1890ff" }}>
-                [#{record.webUrl.split("/").pop()}]
-              </span>
-            </a>
-          </Space>
-          <span style={{ color: "#888" }}>
+          <span style={{ color: "#888", fontSize: "0.7em" }}>
             Created:{" "}
             {moment(record.createdAt).format("MMMM Do YYYY, h:mm:ss a")}
           </span>
           {record.state === "merged" && (
-            <span style={{ color: "#888" }}>
+            <span style={{ color: "#888", fontSize: "0.7em", borderLeft: "1px solid #888", paddingLeft: "8px" }}>
               Merged On:{" "}
               {moment(record.mergedAt).format("MMMM Do YYYY, h:mm:ss a")}
             </span>
           )}
+          </Space>
           <Space wrap>
             {record.labels.nodes.map((label) => (
               <Tag key={label.id} color={label.color}>
@@ -223,12 +231,20 @@ export const MRTable: React.FC<MRTableProps> = ({ mergeRequests }) => {
   ];
 
   return (
-    <Table
-      columns={columns}
-      dataSource={sortedData}
-      rowKey="id"
-      pagination={{ pageSize: 10 }}
-      scroll={{ x: true }}
-    />
+    <>
+      <Search
+        placeholder="Search by title"
+        onSearch={handleSearch}
+        onChange={(e) => handleSearch(e.target.value)}
+        style={{ marginBottom: 16 }}
+      />
+      <Table
+        columns={columns}
+        dataSource={sortedData}
+        rowKey="id"
+        pagination={{ pageSize: 10 }}
+        scroll={{ x: true }}
+      />
+    </>
   );
 };
