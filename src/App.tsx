@@ -78,7 +78,7 @@ function App() {
           projectLabels={projectLabels}
           isLoadingLabels={labelsLoading}
         />
-      <Content className="p-8">
+      <Content className="px-8">
         {labelsError && (
           <Alert
             message="Error"
