@@ -1,13 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Layout, Typography, Spin, Alert } from 'antd';
-import { useLazyQuery, useQuery, useApolloClient } from '@apollo/client';
+import { useQuery, useApolloClient } from '@apollo/client';
 import { GET_MERGE_REQUESTS, GET_PROJECT_LABELS } from './graphql/queries';
 import { MRFilters } from './components/MRFilters';
 import { MRCard } from './components/MRCard';
 import { MRTable } from './components/MRTable';
-import { ViewToggle } from './components/ViewToggle';
 import type { FilterParams, MergeRequest, ProjectLabel } from './types/gitlab';
-import { GitMergeIcon } from 'lucide-react';
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -69,10 +67,17 @@ function App() {
 
   return (
     <Layout className="min-h-screen">
-      <Header className="flex items-center bg-white shadow">
+      {/* <Header className="flex items-center bg-white shadow">
         <GitMergeIcon className="mr-2" />
         <Title level={3} className="m-0">GitLab MR Dashboard</Title>
-      </Header>
+      </Header> */}
+      <MRFilters
+          selectedLabels={filters.labels}
+          onFilterChange={handleFilterChange}
+          onFetchData={handleFetchData}
+          projectLabels={projectLabels}
+          isLoadingLabels={labelsLoading}
+        />
       <Content className="p-8">
         {labelsError && (
           <Alert
@@ -84,13 +89,13 @@ function App() {
           />
         )}
 
-        <MRFilters
+        {/* <MRFilters
           selectedLabels={filters.labels}
           onFilterChange={handleFilterChange}
           onFetchData={handleFetchData}
           projectLabels={projectLabels}
           isLoadingLabels={labelsLoading}
-        />
+        /> */}
 
         {error && (
           <Alert
