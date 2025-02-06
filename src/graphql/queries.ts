@@ -95,3 +95,20 @@ export const GET_MERGE_REQUESTS = gql`
     }
   }
 `;
+
+export const UPDATE_MERGE_REQUEST_TITLE = gql`
+  mutation UpdateMergeRequestTitle($projectPath: ID!, $iid: String!, $title: String!) {
+    updateMergeRequest(
+      input: {
+        projectPath: $projectPath
+        iid: $iid
+        title: $title
+      }
+    ) {
+      mergeRequest {
+        id
+        title
+      }
+    }
+  }
+`;

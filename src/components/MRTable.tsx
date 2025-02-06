@@ -1,10 +1,12 @@
 import React, { useState } from "react";
-import { Table, Tag, Tooltip, Space, Collapse, Input } from "antd";
-import { CheckOutlined, BranchesOutlined } from "@ant-design/icons";
+import { Table, Tag, Tooltip, Space, Input, message, Button } from "antd";
+import { CheckOutlined, BranchesOutlined, EditOutlined, CloseOutlined, CommentOutlined, MergeOutlined } from "@ant-design/icons";
 import moment from "moment";
+import { useMutation } from '@apollo/client';
 import type { MergeRequest } from "../types/gitlab";
+import { UPDATE_MERGE_REQUEST_TITLE } from '../graphql/queries';
+import { Sidebar } from './Sidebar';
 
-const { Panel } = Collapse;
 const { Search } = Input;
 
 interface MRTableProps {
@@ -35,6 +37,11 @@ export const MRTable: React.FC<MRTableProps> = ({ mergeRequests }) => {
     return [...openMRs, ...mergedMRs, ...closedMRs];
   });
   const [sortOrder, setSortOrder] = useState<"ascend" | "descend" | null>(null);
+  const [editingMR, setEditingMR] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState<string>('');
+  const [selectedMR, setSelectedMR] = useState<MergeRequest | null>(null);
+  
+  const [updateMRTitle] = useMutation(UPDATE_MERGE_REQUEST_TITLE);
 
   const handleSort = () => {
     const order = sortOrder === "ascend" ? "descend" : "ascend";
@@ -55,10 +62,40 @@ export const MRTable: React.FC<MRTableProps> = ({ mergeRequests }) => {
     setSortedData(filteredData);
   };
 
+  const handleEditTitle = async (record: MergeRequest) => {
+    if (editingMR === record.id) {
+      try {
+        const projectPath = record.webUrl.split('/-/')[0].split('gitlab.com/')[1];
+        const iid = record.webUrl.split('/-/merge_requests/')[1];
+        
+        await updateMRTitle({
+          variables: {
+            projectPath,
+            iid,
+            title: editTitle
+          }
+        });
+
+        message.success('Merge request title updated successfully');
+        setEditingMR(null);
+      } catch (error) {
+        message.error('Failed to update merge request title');
+      }
+    } else {
+      setEditingMR(record.id);
+      setEditTitle(record.title);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMR(null);
+    setEditTitle('');
+  };
+
   const getStateIcon = (state: string) => {
     switch (state) {
       case "merged":
-        return <CheckOutlined className="text-green-500" />;
+        return <MergeOutlined className="text-green-500" />;
       case "opened":
         return <BranchesOutlined className="text-blue-500"  />;
       default:
@@ -73,13 +110,42 @@ export const MRTable: React.FC<MRTableProps> = ({ mergeRequests }) => {
       key: "title",
       width: "50%",
       render: (text: string, record: MergeRequest) => (
-        <Space direction="vertical">
-          <a href={record.webUrl} target="_blank" rel="noopener noreferrer">
-            <span style={{ color: "#1890ff" }}>
-              [#{record.webUrl.split("/").pop()}]
-            </span>{" "}
-            <span>{text}</span>
-          </a>
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Space style={{ width: '100%' }}>
+            {editingMR === record.id ? (
+              <>
+                <Input.TextArea
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  style={{ width: '90%' }}
+                  autoSize={{ minRows: 1, maxRows: 6 }}
+                />
+                <Space>
+                  <CheckOutlined 
+                    onClick={() => handleEditTitle(record)}
+                    style={{ cursor: 'pointer', color: '#52c41a' }}
+                  />
+                  <CloseOutlined 
+                    onClick={handleCancelEdit}
+                    style={{ cursor: 'pointer', color: '#ff4d4f' }}
+                  />
+                </Space>
+              </>
+            ) : (
+              <>
+                <a href={record.webUrl} target="_blank" rel="noopener noreferrer">
+                  <span style={{ color: "#1890ff" }}>
+                    [#{record.webUrl.split("/").pop()}]
+                  </span>{" "}
+                  <span>{text}</span>
+                </a>
+                {/* <EditOutlined 
+                  onClick={() => handleEditTitle(record)}
+                  style={{ cursor: 'pointer' }}
+                /> */}
+              </>
+            )}
+          </Space>
           <Space wrap>
           <span style={{ color: "#888", fontSize: "0.7em" }}>
             Created:{" "}
@@ -169,65 +235,25 @@ export const MRTable: React.FC<MRTableProps> = ({ mergeRequests }) => {
         </Space>
       ),
     },
-    // {
-    //   title: 'Description',
-    //   dataIndex: 'description',
-    //   key: 'description',
-    //   render: (_: any, record: MergeRequest) => (
-    //     <Collapse>
-    //       <Panel header="Show Description" key="1">
-    //         {record.description}
-    //         {/* <ReactMarkdown>{record.description}</ReactMarkdown> */}
-    //       </Panel>
-    //     </Collapse>
-    //   ),
-    // },
-    // {
-    //   title: 'Resolvable Comments',
-    //   dataIndex: 'resolvableComments',
-    //   key: 'resolvableComments',
-    //   render: (_: any, record: MergeRequest) => {
-    //     const resolvableDiscussions = record.discussions.nodes.filter(discussion =>
-    //       discussion.notes.nodes.some(note => note.resolvable)
-    //     );
-    //     return (
-    //       <Collapse>
-    //         <Panel header={`Show Resolvable Comments (${resolvableDiscussions.length})`} key="1">
-    //           {resolvableDiscussions.length > 0 ? (
-    //             resolvableDiscussions.map(discussion => (
-    //               <div key={discussion.id} style={{ marginBottom: '16px' }}>
-    //                 {discussion.notes.nodes.map(comment => (
-    //                   <div key={comment.id} style={{ marginBottom: '8px' }}>
-    //                     <div style={{
-    //                       background: '#f1f1f1',
-    //                       padding: '8px',
-    //                       borderRadius: '8px',
-    //                       maxWidth: '80%',
-    //                       wordBreak: 'break-word',
-    //                       position: 'relative'
-    //                     }}>
-    //                       {comment.body}
-    //                       <div style={{ color: '#888', fontSize: '12px', marginTop: '4px' }}>
-    //                         - {comment.author.name}
-    //                       </div>
-    //                       {comment.resolved && (
-    //                         <CheckCircleOutlined
-    //                           style={{ color: 'green', position: 'absolute', top: '8px', right: '8px' }}
-    //                         />
-    //                       )}
-    //                     </div>
-    //                   </div>
-    //                 ))}
-    //               </div>
-    //             ))
-    //           ) : (
-    //             'No resolvable comments'
-    //           )}
-    //         </Panel>
-    //       </Collapse>
-    //     );
-    //   },
-    // },
+    {
+      title: "Discussions",
+      key: "discussions",
+      render: (_: any, record: MergeRequest) => {
+        const resolvableDiscussionCount = record.discussions.nodes.filter(
+          discussion => discussion.notes.nodes.some(note => note.resolvable)
+        ).length;
+        
+        return (
+          <Button
+            icon={<CommentOutlined />}
+            onClick={() => setSelectedMR(record)}
+            type="text"
+          >
+            {resolvableDiscussionCount}
+          </Button>
+        );
+      },
+    },
   ];
 
   return (
@@ -244,6 +270,11 @@ export const MRTable: React.FC<MRTableProps> = ({ mergeRequests }) => {
         rowKey="id"
         pagination={{ pageSize: 10 }}
         scroll={{ x: true }}
+      />
+      <Sidebar
+        mergeRequest={selectedMR}
+        visible={!!selectedMR}
+        onClose={() => setSelectedMR(null)}
       />
     </>
   );
